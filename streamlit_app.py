@@ -403,86 +403,49 @@ def qa_interface():
     
     # Sidebar
     with st.sidebar:
-        st.header("⚙️ Configuration")
-        
-        # API Keys Configuration
-        st.subheader("🔑 API Keys")
+        st.header("⚙️ Setup")
         
         # Groq API Key
         groq_key = st.text_input(
-            "Groq API Key",
+            "🔑 Groq API Key",
             type="password",
-            help="Get your API key from https://console.groq.com/",
-            placeholder="Enter your Groq API key..."
+            help="Get your free API key from console.groq.com",
+            placeholder="Enter your API key..."
         )
         
         # Model Selection
-        model_options = [
-            "llama-3.1-8b-instant",
-            "llama-3.1-70b-versatile", 
-            "mixtral-8x7b-32768",
-            "gemma2-9b-it"
-        ]
-        
         selected_model = st.selectbox(
-            "LLM Model",
-            model_options,
-            help="Choose the Groq model to use"
+            "🤖 Model",
+            ["llama-3.1-8b-instant", "llama-3.1-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"],
+            help="Choose the Groq model"
         )
-        
-        # Optional: LangSmith for tracing
-        with st.expander("🔍 Optional: LangSmith Tracing"):
-            langsmith_key = st.text_input(
-                "LangSmith API Key",
-                type="password",
-                help="Optional: For advanced tracing and monitoring",
-                placeholder="Enter LangSmith API key (optional)..."
-            )
-            
-            langsmith_project = st.text_input(
-                "LangSmith Project Name",
-                value="rag-qa-agent",
-                help="Project name for LangSmith tracing"
-            )
         
         # Apply configuration
         if groq_key:
-            # Update configuration dynamically
             import os
             os.environ["GROQ_API_KEY"] = groq_key
             os.environ["LLM_MODEL"] = selected_model
-            
-            if langsmith_key:
-                os.environ["LANGSMITH_API_KEY"] = langsmith_key
-                os.environ["LANGSMITH_PROJECT"] = langsmith_project
-                os.environ["ENABLE_TRACING"] = "true"
-            
-            st.success("✅ Configuration Applied!")
+            st.success("✅ Ready!")
         else:
-            st.warning("⚠️ No Groq API key provided. Using mock responses.")
+            st.info("👆 Add API key to start")
         
         st.markdown("---")
         
-        # Knowledge base info
-        if groq_key:  # Only try to initialize if we have API key
+        # Quick info
+        if groq_key and agent:
             kb_info = agent.get_knowledge_base_info()
             if kb_info.get('status') == 'ready':
                 collection_info = kb_info.get('collection_info', {})
-                config = kb_info.get('config', {})
-                
-                st.success("Knowledge Base Ready")
-                st.metric("Documents", collection_info.get('document_count', 0))
-                
-                with st.expander("📊 System Details"):
-                    st.write(f"**Embedding Model:** {collection_info.get('embedding_model', 'unknown')}")
-                    st.write(f"**LLM Model:** {selected_model}")
-                    st.write(f"**Chunk Size:** {config.get('chunk_size', 'unknown')}")
-                    st.write(f"**Top-K Retrieval:** {config.get('top_k_documents', 'unknown')}")
-            else:
-                st.error("Knowledge Base Error")
-                st.write(kb_info.get('error', 'Unknown error'))
-        else:
-            st.info("💡 Add your Groq API key above to enable full functionality")
+                st.metric("📚 Documents", collection_info.get('document_count', 0))
+        
+        # Help
+        with st.expander("ℹ️ Help"):
+            st.markdown("**Get API Key:**")
+            st.markdown("[console.groq.com](https://console.groq.com/)")
+            st.markdown("**Models:**")
+            st.markdown("• 8b-instant: Fast")
+            st.markdown("• 70b-versatile: Best quality")
+            st.markdown("• mixtral: Complex tasks")
         
         st.markdown("---")
         
@@ -845,20 +808,8 @@ def export_history():
 def main():
     """Main Streamlit application."""
     
-    # Header with sidebar toggle
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col1:
-        st.markdown("**👈 Check Sidebar**")
-        st.markdown("*for configuration*")
-    
-    with col2:
-        st.markdown('<h1 class="main-header">🤖 RAG Q&A Agent</h1>', unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("**Configuration →**")
-        st.markdown("*in sidebar or below*")
-    
+    # Clean header
+    st.markdown('<h1 class="main-header">🤖 RAG Q&A Agent</h1>', unsafe_allow_html=True)
     st.markdown("**Retrieval-Augmented Generation with Comprehensive Evaluation**")
     
     # Check if modules are available
@@ -867,56 +818,10 @@ def main():
         st.info("Please install dependencies: `pip install -r requirements.txt`")
         st.stop()
     
-    # Quick setup info and main configuration
+    # Simple setup check
     import os
     if not os.getenv("GROQ_API_KEY"):
-        # Prominent sidebar notice
-        st.warning("⚠️ **Configuration Required:** Please configure your API key to use the system.")
-        
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.info("**Option 1: Use Sidebar** 👈\nLook for the sidebar on the left with configuration options.")
-        with col2:
-            st.info("**Option 2: Configure Below** 👇\nUse the configuration section below if sidebar is not visible.")
-        
-        # Main area configuration (fallback if sidebar not visible)
-        with st.expander("🔑 **API Configuration** (Click to expand)", expanded=True):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                groq_key_main = st.text_input(
-                    "Groq API Key",
-                    type="password",
-                    help="Get your API key from https://console.groq.com/",
-                    placeholder="Enter your Groq API key...",
-                    key="main_groq_key"
-                )
-            
-            with col2:
-                model_options = [
-                    "llama-3.1-8b-instant",
-                    "llama-3.1-70b-versatile", 
-                    "mixtral-8x7b-32768",
-                    "gemma2-9b-it"
-                ]
-                
-                selected_model_main = st.selectbox(
-                    "LLM Model",
-                    model_options,
-                    help="Choose the Groq model to use",
-                    key="main_model_select"
-                )
-            
-            if groq_key_main:
-                os.environ["GROQ_API_KEY"] = groq_key_main
-                os.environ["LLM_MODEL"] = selected_model_main
-                st.success("✅ Configuration Applied! You can now ask questions below.")
-            
-            st.markdown("**Steps:**")
-            st.markdown("1. Get a free API key from [console.groq.com](https://console.groq.com/)")
-            st.markdown("2. Enter it above and select a model")
-            st.markdown("3. Start asking questions!")
-        
+        st.info("💡 **Setup Required:** Please configure your Groq API key in the sidebar to get started.")
         st.markdown("---")
     
     # Create tabs
