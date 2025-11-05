@@ -42,6 +42,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Force sidebar to be visible
+st.markdown("""
+<style>
+    /* Force sidebar to be visible */
+    .css-1d391kg {
+        width: 300px !important;
+        min-width: 300px !important;
+    }
+    
+    /* Ensure sidebar is always visible on mobile */
+    @media (max-width: 768px) {
+        .css-1d391kg {
+            width: 280px !important;
+            min-width: 280px !important;
+            position: relative !important;
+            transform: translateX(0) !important;
+        }
+    }
+    
+    /* Make sidebar toggle more visible */
+    .css-1rs6os {
+        background-color: #FF6B35 !important;
+        color: white !important;
+    }
+    
+    /* Sidebar visibility fix */
+    .sidebar .sidebar-content {
+        width: 300px !important;
+    }
+    
+    /* Force sidebar button to be visible */
+    button[kind="header"] {
+        background-color: #FF6B35 !important;
+        color: white !important;
+        border: 2px solid white !important;
+        font-weight: bold !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # Universal color scheme that works on both light and dark themes
 st.markdown("""
 <style>
@@ -805,8 +845,20 @@ def export_history():
 def main():
     """Main Streamlit application."""
     
-    # Header
-    st.markdown('<h1 class="main-header">🤖 RAG Q&A Agent</h1>', unsafe_allow_html=True)
+    # Header with sidebar toggle
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        st.markdown("**👈 Check Sidebar**")
+        st.markdown("*for configuration*")
+    
+    with col2:
+        st.markdown('<h1 class="main-header">🤖 RAG Q&A Agent</h1>', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("**Configuration →**")
+        st.markdown("*in sidebar or below*")
+    
     st.markdown("**Retrieval-Augmented Generation with Comprehensive Evaluation**")
     
     # Check if modules are available
@@ -815,13 +867,56 @@ def main():
         st.info("Please install dependencies: `pip install -r requirements.txt`")
         st.stop()
     
-    # Quick setup info
+    # Quick setup info and main configuration
     import os
     if not os.getenv("GROQ_API_KEY"):
-        st.info("💡 **Quick Setup:** Add your Groq API key in the sidebar to get started!")
-        st.markdown("1. Get a free API key from [console.groq.com](https://console.groq.com/)")
-        st.markdown("2. Enter it in the sidebar under 'API Keys'")
-        st.markdown("3. Start asking questions!")
+        # Prominent sidebar notice
+        st.warning("⚠️ **Configuration Required:** Please configure your API key to use the system.")
+        
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            st.info("**Option 1: Use Sidebar** 👈\nLook for the sidebar on the left with configuration options.")
+        with col2:
+            st.info("**Option 2: Configure Below** 👇\nUse the configuration section below if sidebar is not visible.")
+        
+        # Main area configuration (fallback if sidebar not visible)
+        with st.expander("🔑 **API Configuration** (Click to expand)", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                groq_key_main = st.text_input(
+                    "Groq API Key",
+                    type="password",
+                    help="Get your API key from https://console.groq.com/",
+                    placeholder="Enter your Groq API key...",
+                    key="main_groq_key"
+                )
+            
+            with col2:
+                model_options = [
+                    "llama-3.1-8b-instant",
+                    "llama-3.1-70b-versatile", 
+                    "mixtral-8x7b-32768",
+                    "gemma2-9b-it"
+                ]
+                
+                selected_model_main = st.selectbox(
+                    "LLM Model",
+                    model_options,
+                    help="Choose the Groq model to use",
+                    key="main_model_select"
+                )
+            
+            if groq_key_main:
+                os.environ["GROQ_API_KEY"] = groq_key_main
+                os.environ["LLM_MODEL"] = selected_model_main
+                st.success("✅ Configuration Applied! You can now ask questions below.")
+            
+            st.markdown("**Steps:**")
+            st.markdown("1. Get a free API key from [console.groq.com](https://console.groq.com/)")
+            st.markdown("2. Enter it above and select a model")
+            st.markdown("3. Start asking questions!")
+        
         st.markdown("---")
     
     # Create tabs
