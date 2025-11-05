@@ -172,16 +172,23 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_resource
-def initialize_agent():
-    """Initialize the RAG agent with caching."""
+def initialize_agent_dynamic():
+    """Initialize the RAG agent with dynamic configuration."""
     if not MODULES_AVAILABLE:
         return None, "Required modules not available"
     
     try:
-        with st.spinner("Initializing RAG Agent..."):
-            agent = RAGAgent(initialize_kb=True)
-        return agent, None
+        # Check if we have API key in environment (set by sidebar)
+        import os
+        if os.getenv("GROQ_API_KEY"):
+            with st.spinner("Initializing RAG Agent..."):
+                agent = RAGAgent(initialize_kb=True)
+            return agent, None
+        else:
+            # Create agent without API key (mock mode)
+            with st.spinner("Initializing RAG Agent (Mock Mode)..."):
+                agent = RAGAgent(initialize_kb=True)
+            return agent, None
     except Exception as e:
         return None, str(e)
 
@@ -348,7 +355,7 @@ def qa_interface():
     """Main Q&A interface tab."""
     
     # Initialize agent
-    agent, error = initialize_agent()
+    agent, error = initialize_agent_dynamic()
     
     if error:
         st.error(f"Failed to initialize agent: {error}")
@@ -358,23 +365,84 @@ def qa_interface():
     with st.sidebar:
         st.header("⚙️ Configuration")
         
-        # Knowledge base info
-        kb_info = agent.get_knowledge_base_info()
-        if kb_info.get('status') == 'ready':
-            collection_info = kb_info.get('collection_info', {})
-            config = kb_info.get('config', {})
+        # API Keys Configuration
+        st.subheader("🔑 API Keys")
+        
+        # Groq API Key
+        groq_key = st.text_input(
+            "Groq API Key",
+            type="password",
+            help="Get your API key from https://console.groq.com/",
+            placeholder="Enter your Groq API key..."
+        )
+        
+        # Model Selection
+        model_options = [
+            "llama-3.1-8b-instant",
+            "llama-3.1-70b-versatile", 
+            "mixtral-8x7b-32768",
+            "gemma2-9b-it"
+        ]
+        
+        selected_model = st.selectbox(
+            "LLM Model",
+            model_options,
+            help="Choose the Groq model to use"
+        )
+        
+        # Optional: LangSmith for tracing
+        with st.expander("🔍 Optional: LangSmith Tracing"):
+            langsmith_key = st.text_input(
+                "LangSmith API Key",
+                type="password",
+                help="Optional: For advanced tracing and monitoring",
+                placeholder="Enter LangSmith API key (optional)..."
+            )
             
-            st.success("Knowledge Base Ready")
-            st.metric("Documents", collection_info.get('document_count', 0))
+            langsmith_project = st.text_input(
+                "LangSmith Project Name",
+                value="rag-qa-agent",
+                help="Project name for LangSmith tracing"
+            )
+        
+        # Apply configuration
+        if groq_key:
+            # Update configuration dynamically
+            import os
+            os.environ["GROQ_API_KEY"] = groq_key
+            os.environ["LLM_MODEL"] = selected_model
             
-            with st.expander("📊 System Details"):
-                st.write(f"**Embedding Model:** {collection_info.get('embedding_model', 'unknown')}")
-                st.write(f"**LLM Model:** {config.get('llm_model', 'unknown')}")
-                st.write(f"**Chunk Size:** {config.get('chunk_size', 'unknown')}")
-                st.write(f"**Top-K Retrieval:** {config.get('top_k_documents', 'unknown')}")
+            if langsmith_key:
+                os.environ["LANGSMITH_API_KEY"] = langsmith_key
+                os.environ["LANGSMITH_PROJECT"] = langsmith_project
+                os.environ["ENABLE_TRACING"] = "true"
+            
+            st.success("✅ Configuration Applied!")
         else:
-            st.error("Knowledge Base Error")
-            st.write(kb_info.get('error', 'Unknown error'))
+            st.warning("⚠️ No Groq API key provided. Using mock responses.")
+        
+        st.markdown("---")
+        
+        # Knowledge base info
+        if groq_key:  # Only try to initialize if we have API key
+            kb_info = agent.get_knowledge_base_info()
+            if kb_info.get('status') == 'ready':
+                collection_info = kb_info.get('collection_info', {})
+                config = kb_info.get('config', {})
+                
+                st.success("Knowledge Base Ready")
+                st.metric("Documents", collection_info.get('document_count', 0))
+                
+                with st.expander("📊 System Details"):
+                    st.write(f"**Embedding Model:** {collection_info.get('embedding_model', 'unknown')}")
+                    st.write(f"**LLM Model:** {selected_model}")
+                    st.write(f"**Chunk Size:** {config.get('chunk_size', 'unknown')}")
+                    st.write(f"**Top-K Retrieval:** {config.get('top_k_documents', 'unknown')}")
+            else:
+                st.error("Knowledge Base Error")
+                st.write(kb_info.get('error', 'Unknown error'))
+        else:
+            st.info("💡 Add your Groq API key above to enable full functionality")
         
         st.markdown("---")
         
@@ -518,7 +586,7 @@ def evaluation_interface():
     st.header("🔬 Model Evaluation")
     
     # Initialize agent and evaluator
-    agent, agent_error = initialize_agent()
+    agent, agent_error = initialize_agent_dynamic()
     if agent_error:
         st.error(f"Failed to initialize agent: {agent_error}")
         return
@@ -746,6 +814,15 @@ def main():
         st.error("❌ Required modules not available!")
         st.info("Please install dependencies: `pip install -r requirements.txt`")
         st.stop()
+    
+    # Quick setup info
+    import os
+    if not os.getenv("GROQ_API_KEY"):
+        st.info("💡 **Quick Setup:** Add your Groq API key in the sidebar to get started!")
+        st.markdown("1. Get a free API key from [console.groq.com](https://console.groq.com/)")
+        st.markdown("2. Enter it in the sidebar under 'API Keys'")
+        st.markdown("3. Start asking questions!")
+        st.markdown("---")
     
     # Create tabs
     tab1, tab2, tab3 = st.tabs(["🤖 Q&A Interface", "🔬 Evaluation", "ℹ️ About"])

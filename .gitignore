@@ -1,2 +1,42 @@
+# Environment files
 .env
-myenv
+.env.local
+.env.*.local
+
+# Virtual environments
+myenv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ChromaDB storage
+chroma_db/
+
+# Logs
+*.log
+rag_agent.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/

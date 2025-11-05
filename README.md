@@ -30,18 +30,16 @@ A Retrieval-Augmented Generation (RAG) Question-Answering system built with Lang
    pip install -r requirements.txt
    ```
 
-2. **Set up environment variables (optional):**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Groq API key
-   # GROQ_API_KEY=your_key_here
-   # Get your key from: https://console.groq.com/
-   ```
-
-3. **Run the application:**
+2. **Run the application:**
    ```bash
    streamlit run streamlit_app.py
    ```
+
+3. **Configure API keys in the web interface:**
+   - Get your Groq API key from [console.groq.com](https://console.groq.com/)
+   - Enter it in the sidebar under "API Keys"
+   - Optionally add LangSmith key for advanced tracing
+   - Start asking questions!
 
 ## 🎯 Quick Start
 
@@ -50,12 +48,19 @@ A Retrieval-Augmented Generation (RAG) Question-Answering system built with Lang
 pip install -r requirements.txt && streamlit run streamlit_app.py
 ```
 
+### Dynamic Configuration
+No need for .env files! Configure everything in the web interface:
+- **API Keys**: Enter Groq API key directly in the sidebar
+- **Model Selection**: Choose from available Groq models
+- **Optional Tracing**: Add LangSmith credentials for monitoring
+- **Real-time Updates**: Changes apply immediately
+
 The web interface provides:
 - Interactive Q&A with the knowledge base
 - Real-time evaluation metrics
 - Query history and export
 - Dataset evaluation tools
-- System configuration
+- Dynamic system configuration
 
 ### Features Available in Web Interface
 - **Interactive Q&A**: Ask questions in real-time
